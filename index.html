@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Controle de Vencimentos</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f9;
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      .form-container {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input {
+        padding: 8px;
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #007bff;
+        color: white;
+      }
+      .alert {
+        color: red;
+        font-weight: bold;
+      }
+      .delete-btn {
+        padding: 5px 10px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .delete-btn:hover {
+        background-color: #a71d2a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Controle de Vencimentos</h1>
+    <div class="form-container">
+      <label for="productName">Nome do Produto:</label>
+      <input
+        type="text"
+        id="productName"
+        placeholder="Digite o nome do produto"
+      />
+
+      <label for="expiryDate">Data de Vencimento:</label>
+      <input type="date" id="expiryDate" />
+
+      <button onclick="addProduct()">Adicionar Produto</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome do Produto</th>
+          <th>Data de Vencimento</th>
+          <th>Dias para Vencer</th>
+          <th>Status</th>
+          <th>Ação</th>
+        </tr>
+      </thead>
+      <tbody id="productTable"></tbody>
+    </table>
+
+    <script>
+      // Estrutura de dados para armazenar os produtos
+      let products = [];
+
+      // Carregar dados do localStorage quando a página carregar
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProducts();
+        renderProducts();
+      });
+
+      // Service Worker registration
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./sw.js")
+          .then(() => console.log("Service Worker registrado com sucesso!"))
+          .catch((error) =>
+            console.log("Erro ao registrar o Service Worker:", error)
+          );
+      }
+
+      // Função para carregar produtos do localStorage
+      function loadProducts() {
+        const savedProducts = localStorage.getItem("products");
+        if (savedProducts) {
+          products = JSON.parse(savedProducts);
+        }
+      }
+
+      // Função para salvar produtos no localStorage
+      function saveProducts() {
+        localStorage.setItem("products", JSON.stringify(products));
+      }
+
+      // Função para calcular dias até o vencimento
+      function calculateDaysToExpiry(expiryDate) {
+        const today = new Date();
+        const expiry = new Date(expiryDate);
+        const timeDiff = expiry - today;
+        return Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      }
+
+      // Função para renderizar a tabela de produtos
+      function renderProducts() {
+        const table = document.getElementById("productTable");
+        table.innerHTML = ""; // Limpa a tabela
+
+        products.forEach((product, index) => {
+          const row = table.insertRow();
+          const daysToExpiry = calculateDaysToExpiry(product.expiryDate);
+          const status = daysToExpiry <= 10 ? "Próximo do Vencimento" : "";
+
+          row.insertCell(0).textContent = product.name;
+          row.insertCell(1).textContent = product.expiryDate;
+          row.insertCell(2).textContent = daysToExpiry;
+          row.insertCell(3).textContent = status;
+
+          const deleteCell = row.insertCell(4);
+          const deleteButton = document.createElement("button");
+          deleteButton.textContent = "Excluir";
+          deleteButton.className = "delete-btn";
+          deleteButton.onclick = function () {
+            deleteProduct(index);
+          };
+          deleteCell.appendChild(deleteButton);
+
+          if (status) {
+            row.cells[3].classList.add("alert");
+          }
+        });
+      }
+
+      // Função para adicionar um novo produto
+      function addProduct() {
+        const productName = document.getElementById("productName").value;
+        const expiryDate = document.getElementById("expiryDate").value;
+
+        if (!productName || !expiryDate) {
+          alert("Por favor, preencha todos os campos.");
+          return;
+        }
+
+        products.push({
+          name: productName,
+          expiryDate: expiryDate,
+        });
+
+        saveProducts();
+        renderProducts();
+
+        // Limpar campos do formulário
+        document.getElementById("productName").value = "";
+        document.getElementById("expiryDate").value = "";
+      }
+
+      // Função para deletar um produto
+      function deleteProduct(index) {
+        products.splice(index, 1);
+        saveProducts();
+        renderProducts();
+      }
+    </script>
+  </body>
+</html>
