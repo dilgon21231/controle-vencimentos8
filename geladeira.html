@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Geladeira - Controle de Vencimentos</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #e3f2fd;
+        color: #004d6b;
+        margin: 0;
+        padding: 0;
+      }
+      header {
+        background-color: #0277bd;
+        color: #fff;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        margin: 0;
+      }
+      .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      label {
+        display: block;
+        margin: 10px 0 5px;
+        font-weight: bold;
+      }
+      input,
+      button {
+        font-family: Arial, sans-serif;
+        padding: 10px;
+        border: 2px solid #0277bd;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        width: 100%;
+      }
+      input {
+        background-color: #fff;
+      }
+      button {
+        background-color: #0277bd;
+        color: #fff;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: #01579b;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background-color: #fff;
+      }
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+      th {
+        background-color: #0277bd;
+        color: white;
+      }
+      .alert {
+        color: #d32f2f;
+        font-weight: bold;
+      }
+      footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 14px;
+        color: #004d6b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Geladeira - Controle de Vencimentos</h1>
+    </header>
+    <div class="container">
+      <button onclick="location.href='index.html'">Voltar ao Menu</button>
+      <div>
+        <label for="productName">Nome do Produto:</label>
+        <input
+          type="text"
+          id="productName"
+          placeholder="Digite o nome do produto"
+        />
+
+        <label for="expiryDate">Data de Vencimento:</label>
+        <input type="date" id="expiryDate" />
+
+        <button onclick="addProduct()">Adicionar Produto</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome do Produto</th>
+            <th>Data de Vencimento</th>
+            <th>Dias para Vencer</th>
+            <th>Status</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="fridgeTable"></tbody>
+      </table>
+    </div>
+    <footer>&copy; 2025 - Geladeira Controle</footer>
+    <script>
+      let fridgeProducts = [];
+
+      function loadProducts() {
+        const savedProducts = localStorage.getItem("fridgeProducts");
+        if (savedProducts) {
+          fridgeProducts = JSON.parse(savedProducts);
+        }
+      }
+
+      function saveProducts() {
+        localStorage.setItem("fridgeProducts", JSON.stringify(fridgeProducts));
+      }
+
+      function calculateDaysToExpiry(expiryDate) {
+        const today = new Date();
+        const expiry = new Date(expiryDate);
+        const timeDiff = expiry - today;
+        return Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      }
+
+      function renderProducts() {
+        const fridgeTable = document.getElementById("fridgeTable");
+        fridgeTable.innerHTML = "";
+
+        fridgeProducts.forEach((product, index) => {
+          const daysToExpiry = calculateDaysToExpiry(product.expiryDate);
+          const status = daysToExpiry <= 10 ? "Próximo do Vencimento" : "";
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${product.name}</td>
+            <td>${product.expiryDate}</td>
+            <td>${daysToExpiry}</td>
+            <td class="${status ? "alert" : ""}">${status}</td>
+            <td><button onclick="deleteProduct(${index})">Excluir</button></td>
+          `;
+          fridgeTable.appendChild(row);
+        });
+      }
+
+      function addProduct() {
+        const productName = document.getElementById("productName").value.trim();
+        const expiryDate = document.getElementById("expiryDate").value;
+
+        if (!productName || !expiryDate) {
+          alert("Por favor, preencha todos os campos.");
+          return;
+        }
+
+        fridgeProducts.push({
+          name: productName,
+          expiryDate,
+        });
+
+        saveProducts();
+        renderProducts();
+        document.getElementById("productName").value = "";
+        document.getElementById("expiryDate").value = "";
+      }
+
+      function deleteProduct(index) {
+        fridgeProducts.splice(index, 1);
+        saveProducts();
+        renderProducts();
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadProducts();
+        renderProducts();
+      });
+    </script>
+  </body>
+</html>
