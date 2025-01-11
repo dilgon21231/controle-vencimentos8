@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Controle de Vencimentos</title>
     <style>
+      /* Estilos existentes */
       body {
         font-family: Arial, sans-serif;
         margin: 20px;
@@ -39,6 +40,9 @@
       }
       button:hover {
         background-color: #0056b3;
+      }
+      .button-group {
+        margin-bottom: 20px;
       }
       table {
         width: 100%;
@@ -88,6 +92,12 @@
       <button onclick="addProduct()">Adicionar Produto</button>
     </div>
 
+    <div class="button-group">
+      <button onclick="exportData()">Exportar Dados</button>
+      <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)" />
+      <button onclick="document.getElementById('importFile').click()">Importar Dados</button>
+    </div>
+
     <table>
       <thead>
         <tr>
@@ -102,16 +112,13 @@
     </table>
 
     <script>
-      // Estrutura de dados para armazenar os produtos
       let products = [];
 
-      // Carregar dados do localStorage quando a página carregar
       document.addEventListener("DOMContentLoaded", () => {
         loadProducts();
         renderProducts();
       });
 
-      // Service Worker registration
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("./sw.js")
@@ -121,7 +128,6 @@
           );
       }
 
-      // Função para carregar produtos do localStorage
       function loadProducts() {
         const savedProducts = localStorage.getItem("products");
         if (savedProducts) {
@@ -129,12 +135,10 @@
         }
       }
 
-      // Função para salvar produtos no localStorage
       function saveProducts() {
         localStorage.setItem("products", JSON.stringify(products));
       }
 
-      // Função para calcular dias até o vencimento
       function calculateDaysToExpiry(expiryDate) {
         const today = new Date();
         const expiry = new Date(expiryDate);
@@ -142,10 +146,9 @@
         return Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
       }
 
-      // Função para renderizar a tabela de produtos
       function renderProducts() {
         const table = document.getElementById("productTable");
-        table.innerHTML = ""; // Limpa a tabela
+        table.innerHTML = "";
 
         products.forEach((product, index) => {
           const row = table.insertRow();
@@ -172,7 +175,6 @@
         });
       }
 
-      // Função para adicionar um novo produto
       function addProduct() {
         const productName = document.getElementById("productName").value;
         const expiryDate = document.getElementById("expiryDate").value;
@@ -190,16 +192,46 @@
         saveProducts();
         renderProducts();
 
-        // Limpar campos do formulário
         document.getElementById("productName").value = "";
         document.getElementById("expiryDate").value = "";
       }
 
-      // Função para deletar um produto
       function deleteProduct(index) {
         products.splice(index, 1);
         saveProducts();
         renderProducts();
+      }
+
+      function exportData() {
+        const dataStr = JSON.stringify(products, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "produtos.json";
+        link.click();
+
+        URL.revokeObjectURL(url);
+      }
+
+      function importData(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              const importedProducts = JSON.parse(e.target.result);
+              products = [...products, ...importedProducts];
+              saveProducts();
+              renderProducts();
+              alert("Dados importados com sucesso!");
+            } catch (error) {
+              alert("Erro ao importar os dados. Certifique-se de que o arquivo é válido.");
+            }
+          };
+          reader.readAsText(file);
+        }
       }
     </script>
   </body>
