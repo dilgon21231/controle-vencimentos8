@@ -99,6 +99,16 @@
         <input type="date" id="expiryDate" />
 
         <button onclick="addProduct()">Adicionar Produto</button>
+        <button onclick="exportProducts()">Exportar Dados</button>
+        <input
+          type="file"
+          id="importFile"
+          style="display: none"
+          onchange="importProducts(event)"
+        />
+        <button onclick="document.getElementById('importFile').click()">
+          Importar Dados
+        </button>
       </div>
       <table>
         <thead>
@@ -179,6 +189,34 @@
         pantryProducts.splice(index, 1);
         saveProducts();
         renderProducts();
+      }
+
+      function exportProducts() {
+        const dataStr = JSON.stringify(pantryProducts, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "pantryProducts.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function importProducts(event) {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              pantryProducts = JSON.parse(e.target.result);
+              saveProducts();
+              renderProducts();
+            } catch (error) {
+              alert("Erro ao importar dados: Arquivo inválido.");
+            }
+          };
+          reader.readAsText(file);
+        }
       }
 
       document.addEventListener("DOMContentLoaded", () => {
